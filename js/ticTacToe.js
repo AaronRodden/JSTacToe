@@ -26,74 +26,87 @@ document.body.appendChild(app.view);
 
 app.renderer.backgroundColor = 0x061639;
 
-//console.log(app.renderer.view.width);
-//console.log(app.renderer.view.height);
-
-// app.renderer.autoDensity = true;
-// app.renderer.resize(512, 512);
-
 app.renderer.view.style.position = "absolute";
 app.renderer.view.style.display = "block";
 app.renderer.autoDensity = true;
 app.renderer.resize(window.innerWidth, window.innerHeight);
 
-console.log(app.stage);
-//can use .add to load multiple images
+//TODO: Make a grid of squares
+//TODO: Make each square clickable and know which one is clicked
 
+//create game screen and contents
 let squareHeight = 150;
 let squareWidth = 150;
-const container = document.getElementById("container");
 
-function createGrid() {
-    var grid = {};
-    for (var i = 0; i < 9; i++){
-        if ((i % 2) == 0) {
-            let square = new Sprite(resources["images/brown-square.png"].texture);
-            square.height = squareHeight;
-            square.width = squareWidth;
-            square.x = i * 25;
-            square.y = i * 25;
-            grid[i] = square;
+gameBoard = new PIXI.Container();
 
-        }
-        else {
-            let square = new Sprite(resources["images/lightbrown-square.png"].texture);
-            square.height = squareHeight;
-            square.width = squareWidth;
-            square.x = i * 25;
-            square.y = i * 25;
-            grid[i] = square;
-        }
-    }
-    return grid;
+let redRect = new PIXI.Graphics();
+redRect.beginFill(0xFF0000);
+redRect.drawRect(0,0, squareHeight, squareWidth);
+redRect.interactive = true;
+redRect.on('mousedown', onDown);
+gameBoard.addChild(redRect);
+
+let otherRect = new PIXI.Graphics();
+otherRect.beginFill(0xDD4444);
+otherRect.drawRect(200,200, squareHeight, squareWidth);
+otherRect.interactive = true;
+otherRect.on('click', onClick);
+gameBoard.addChild(otherRect);
+app.stage.addChild(gameBoard);
+
+function onClick (eventData) {
+    console.log(eventData.data);
+    console.log("Clicked a square");
 }
 
-PIXI.loader
-  .add("images/brown-square.png")
-  .add("images/lightbrown-square.png")
-  .load(setup);
-
-
-function setup() {
-    console.log("All sprites loaded");
-    // let brownSquare = new Sprite(resources["images/brown-square.png"].texture);
-    // let lightBrownSquare = new Sprite(resources["images/lightbrown-square.png"].texture);
-    //
-    // brownSquare.scale.x = 0.125;
-    // brownSquare.scale.y = 0.125;
-    // lightBrownSquare.height = brownSquare.height;
-    // lightBrownSquare.width = brownSquare.width;
-    //
-    // lightBrownSquare.position.set(90,180);
-    //
-    // app.stage.addChild(brownSquare);
-    // app.stage.addChild(lightBrownSquare);
-    grid = createGrid();
-    console.log(grid);
-
-    for (x in grid){
-        app.stage.addChild(grid[x]);
-    }
-
-  // sprite.visible = false;
-}
+// function createGrid() {
+//     var grid = {};
+//     // const container = document.getElementById("container");
+//     // const container = document.createElement("div");
+//     // container.setAttribute('id', 'container')
+//     // document.getElementsByTagName("canvas")[0].appendChild(container);
+//     for (var row = 0; row < 3; row++){
+//         for (var col = 0; col < 3; col++) {
+//             if ((row+col) % 2 == 0){
+//                 let square = new Sprite(resources["images/brown-square.png"].texture);
+//                 square.height = squareHeight;
+//                 square.width = squareWidth;
+//                 square.x = (row+col) * 25;
+//                 square.y = (row+col) * 25;
+//                 $("#container").append("<div class='grid'></div>");
+//                 grid[row+col] = square;
+//             }
+//             else {
+//                 let square = new Sprite(resources["images/lightbrown-square.png"].texture);
+//                 square.height = squareHeight;
+//                 square.width = squareWidth;
+//                 square.x = (row+col) * 25;
+//                 square.y = (row+col) * 25;
+//                 // $("#container").append("<div class='grid'></div>");
+//                 grid[row+col] = square;
+//             }
+//         }
+//     }
+//     // $(".grid").width(960/3);
+//     // $(".grid").height(960/3);
+//
+//     return grid;
+// }
+//
+// PIXI.loader
+//   .add("images/brown-square.png")
+//   .add("images/lightbrown-square.png")
+//   .load(setup);
+//
+//
+// function setup() {
+//     console.log("All sprites loaded");
+//     grid = createGrid();
+//     console.log(grid);
+//
+//     for (x in grid){
+//         app.stage.addChild(grid[x]);
+//     }
+//     console.log(app.stage);
+// }
