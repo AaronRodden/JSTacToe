@@ -1,0 +1,15 @@
+{
+  "name": "js",
+  "version": "1.0.0",
+  "description": "creating an online tic tac toe game",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "Aaron Rodden",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
