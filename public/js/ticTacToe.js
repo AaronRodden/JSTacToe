@@ -177,6 +177,10 @@ function play(){
 
 
 $(document).ready(function() {
+
+    //client code
+    const socket = io('http://localhost:3000');
+
     /*
     *
     * Main game Setup
