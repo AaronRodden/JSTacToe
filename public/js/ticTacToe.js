@@ -36,7 +36,7 @@ app.renderer.resize(window.innerWidth, window.innerHeight);
 
 // Custom PIXI classes
 class CustomSprite extends PIXI.Sprite {
-    setId(id) {
+    setID(id) {
         this.id = id;
     }
 }
@@ -50,13 +50,6 @@ class CustomSprite extends PIXI.Sprite {
 const socket = io('http://localhost:3000');
 socket.on('objectMoved', moveObject);
 
-//TODO: Make each square clickable and know which one is clicked
-
-function onClick (eventData) {
-    console.log(eventData.data);
-    console.log("Clicked a square");
-}
-
 function createGrid(gameBoard) {
     var columns = 3;
     var rows = 3;
@@ -67,8 +60,8 @@ function createGrid(gameBoard) {
     }
 
     let cellSize = {
-        x : 150,
-        y : 150
+        x : 200,
+        y : 200
     }
 
     for (var i = 0; i < columns; i++) {
@@ -90,13 +83,82 @@ function createGrid(gameBoard) {
     return grid;
 }
 
+function onClick (eventData) {
+    console.log(eventData.data);
+    console.log("Clicked a square");
+}
+
+// TODO: Create a system that states all the active pieces,
+// this may need to be connected to network
+
+// or
+
+// Have different "sets" of pieces that get activated on a clients side
+// once a piece is placed
+
+// idk which one is better (probs first one???)
+
+function createPiece(stage, playerID) {
+
+    loader
+      .add("images/chess-pieces-sprites.png")
+      .load(setup);
+
+    function setup() {
+        var chessPiecesSheet = PIXI.utils.TextureCache['images/chess-pieces-sprites.png'];
+
+        var piece;
+        if (playerID == 0) {
+            let rect = new PIXI.Rectangle(1000,10,200,200);
+            chessPiecesSheet.frame = rect;
+            piece = new CustomSprite(chessPiecesSheet);
+            piece.setID(0);
+            piece.x = 32;
+            piece.y = 32;
+        }
+        else {
+            let rect = new PIXI.Rectangle(1000,200,200,200);
+            chessPiecesSheet.frame = rect;
+            piece = new CustomSprite(chessPiecesSheet);
+            piece.setID(1);
+            piece.x = 32;
+            piece.y = 32;
+        }
+
+        // enable the shape to be interactive... this will allow it to respond to mouse and touch events
+        piece.interactive = true;
+        // this button mode will mean the hand cursor appears when you roll over the shape with your mouse
+        piece.buttonMode = true;
+        // center the shape's anchor point
+        piece.anchor.set(0.5);
+        // setup events
+        piece
+            // events for drag start
+            .on('mousedown', onDragStart)
+            .on('touchstart', onDragStart)
+            // events for drag end
+            .on('mouseup', onDragEnd)
+            .on('mouseupoutside', onDragEnd)
+            .on('touchend', onDragEnd)
+            .on('touchendoutside', onDragEnd)
+            // events for drag move
+            .on('mousemove', onDragMove)
+            .on('touchmove', onDragMove);
+
+        // move the sprite to its designated position
+        piece.position.x = 300;
+        piece.position.y = 300;
+
+        app.stage.addChild(piece);
+    }
+}
+
 // TODO: Right now this works given a global object that clients see.
 // Need to create an object ID system that organizes this
-
 function moveObject(data){
     // console.log(data);
-    // shape.position.x = data.x;
-    // shape.position.y = data.y;
+    // piece.position.x = data.x;
+    // piece.position.y = data.y;
     // var newPosition = this.data.getLocalPosition(this.parent);
     // this.position.x = newPosition.x;
     // this.position.y = newPosition.y;
@@ -128,79 +190,24 @@ function onDragEnd()
 
 function onDragMove()
 {
-    console.log("Sending: " + this.position.x + "," + this.position.y);
 
-    var data = {
-        objectID: this.id,
-        x: this.position.x,
-        y: this.position.y
-    }
-
-    socket.emit('objectMoved',data)
-
+    // change position on screen then send that info over network
     if (this.dragging)
     {
         var newPosition = this.data.getLocalPosition(this.parent);
         this.position.x = newPosition.x;
         this.position.y = newPosition.y;
+
+        console.log("Sending: " + this.position.x + "," + this.position.y);
+
+        var data = {
+            objectID: this.id,
+            x: this.position.x,
+            y: this.position.y
+        }
+
+        socket.emit('objectMoved',data)
     }
-}
-
-var xTexture = PIXI.Texture.fromImage('images/x.png');
-var circleTexture = PIXI.Texture.fromImage('images/circle.png');
-
-// TODO: Create a system that states all the active pieces,
-// this may need to be connected to network
-
-// or
-
-// Have different "sets" of pieces that get activated on a clients side
-// once a piece is placed
-
-// idk which one is better (probs first one???)
-
-function createPiece(stage, playerID) {
-    var shape;
-    if (playerID == 0) {
-        shape = new CustomSprite(circleTexture);
-        shape.setId(0);
-    }
-    else {
-        shape = new CustomSprite(xTexture);
-        shape.setId(1);
-    }
-
-    shape.widhth = 100;
-    shape.height = 100;
-    // enable the shape to be interactive... this will allow it to respond to mouse and touch events
-   shape.interactive = true;
-   // this button mode will mean the hand cursor appears when you roll over the shape with your mouse
-   shape.buttonMode = true;
-   // center the shape's anchor point
-   shape.anchor.set(0.5);
-   // make it a bit bigger, so it's easier to grab
-   shape.scale.set(3);
-
-    // setup events
-    shape
-        // events for drag start
-        .on('mousedown', onDragStart)
-        .on('touchstart', onDragStart)
-        // events for drag end
-        .on('mouseup', onDragEnd)
-        .on('mouseupoutside', onDragEnd)
-        .on('touchend', onDragEnd)
-        .on('touchendoutside', onDragEnd)
-        // events for drag move
-        .on('mousemove', onDragMove)
-        .on('touchmove', onDragMove);
-
-    // move the sprite to its designated position
-    shape.position.x = 300;
-    shape.position.y = 300;
-
-    // add it to the stage
-    stage.addChild(shape);
 }
 
 // PIXI tutorial reccomended this
@@ -218,7 +225,7 @@ function gameLoop() {
 
 function play(){
     if (activePiece == false) {
-        createPiece(app.stage, 1);
+        createPiece(app.stage, 0);
         activePiece = true
     }
 }
