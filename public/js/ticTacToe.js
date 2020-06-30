@@ -34,6 +34,21 @@ app.renderer.view.style.display = "block";
 app.renderer.autoDensity = true;
 app.renderer.resize(window.innerWidth, window.innerHeight);
 
+// Custom PIXI classes
+class CustomSprite extends PIXI.Sprite {
+    setId(id) {
+        this.id = id;
+    }
+}
+
+
+/*
+*
+*client code
+*
+*/
+const socket = io('http://localhost:3000');
+socket.on('objectMoved', moveObject);
 
 //TODO: Make each square clickable and know which one is clicked
 
@@ -75,6 +90,18 @@ function createGrid(gameBoard) {
     return grid;
 }
 
+// TODO: Right now this works given a global object that clients see.
+// Need to create an object ID system that organizes this
+
+function moveObject(data){
+    // console.log(data);
+    // shape.position.x = data.x;
+    // shape.position.y = data.y;
+    // var newPosition = this.data.getLocalPosition(this.parent);
+    // this.position.x = newPosition.x;
+    // this.position.y = newPosition.y;
+}
+
 function onDragStart(event)
 {
     // store a reference to the data
@@ -101,6 +128,16 @@ function onDragEnd()
 
 function onDragMove()
 {
+    console.log("Sending: " + this.position.x + "," + this.position.y);
+
+    var data = {
+        objectID: this.id,
+        x: this.position.x,
+        y: this.position.y
+    }
+
+    socket.emit('objectMoved',data)
+
     if (this.dragging)
     {
         var newPosition = this.data.getLocalPosition(this.parent);
@@ -112,18 +149,29 @@ function onDragMove()
 var xTexture = PIXI.Texture.fromImage('images/x.png');
 var circleTexture = PIXI.Texture.fromImage('images/circle.png');
 
+// TODO: Create a system that states all the active pieces,
+// this may need to be connected to network
+
+// or
+
+// Have different "sets" of pieces that get activated on a clients side
+// once a piece is placed
+
+// idk which one is better (probs first one???)
+
 function createPiece(stage, playerID) {
     var shape;
     if (playerID == 0) {
-        shape = new PIXI.Sprite(circleTexture);
+        shape = new CustomSprite(circleTexture);
+        shape.setId(0);
     }
     else {
-        shape = new PIXI.Sprite(xTexture);
+        shape = new CustomSprite(xTexture);
+        shape.setId(1);
     }
 
     shape.widhth = 100;
     shape.height = 100;
-    // shape.scale.set(0.00125,0.00125);
     // enable the shape to be interactive... this will allow it to respond to mouse and touch events
    shape.interactive = true;
    // this button mode will mean the hand cursor appears when you roll over the shape with your mouse
@@ -177,10 +225,6 @@ function play(){
 
 
 $(document).ready(function() {
-
-    //client code
-    const socket = io('http://localhost:3000');
-
     /*
     *
     * Main game Setup
@@ -196,26 +240,3 @@ $(document).ready(function() {
     //Start the loop
     gameLoop();
 });
-
-
-/*
-*
-* Sprite loading example
-*/
-
-// PIXI.loader
-//   .add("images/brown-square.png")
-//   .add("images/lightbrown-square.png")
-//   .load(setup);
-//
-//
-// function setup() {
-//     console.log("All sprites loaded");
-//     grid = createGrid();
-//     console.log(grid);
-//
-//     for (x in grid){
-//         app.stage.addChild(grid[x]);
-//     }
-//     console.log(app.stage);
-// }
