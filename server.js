@@ -17,8 +17,7 @@ function newConnection(socket) {
     console.log('new connection: ' + socket.id);
 
     socket.on('objectMoved', objectMoved);
-    socket.on('updateGameState', updateState);
-
+    
     function objectMoved(data){
         console.log(data);
         socket.broadcast.emit('objectMoved', data); //broadcast to everyone BUT client that sent msg

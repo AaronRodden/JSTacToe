@@ -49,20 +49,48 @@ class GameState {
         }
     }
 
-    updateGrid(id, col, row){
-        this.grid[col][row] = id;
+    // TODO: I want to change how this is done eventually but this works for now.
+    checkVictory(){
+        var victory = -1
+        if ((this.grid[0][0] == 0 && this.grid[0][1] == 0 && this.grid[0][2] == 0)
+            || (this.grid[0][0] == 1 && this.grid[0][1] == 1 && this.grid[0][2] == 1)) {
+            victory = this.grid[0][0];
+        }
+        else if ((this.grid[1][0] == 0 && this.grid[1][1] == 0 && this.grid[1][2] == 0)
+            || (this.grid[1][0] == 1 && this.grid[1][1] == 1 && this.grid[1][2] == 1)) {
+            victory = this.grid[1][0];
+        }
+        else if ((this.grid[2][0] == 0 && this.grid[2][1] == 0 && this.grid[2][2] == 0)
+            || (this.grid[2][0] == 1 && this.grid[2][1] == 1 && this.grid[2][2] == 1)) {
+            victory = this.grid[2][0];
+        }
+        // col victories
+        else if ((this.grid[0][0] == 0 && this.grid[1][0] == 0 && this.grid[2][0] == 0)
+            || (this.grid[0][0] == 1 && this.grid[1][0] == 1 && this.grid[2][0] == 1)) {
+            victory = this.grid[0][0];
+        }
+        else if ((this.grid[0][1] == 0 && this.grid[1][1] == 0 && this.grid[2][1] == 0)
+            || (this.grid[0][1] == 1 && this.grid[1][1] == 1 && this.grid[2][1] == 1)) {
+            victory = this.grid[0][1];
+        }
+        else if ((this.grid[0][2] == 0 && this.grid[0][2] == 0 && this.grid[2][2] == 0)
+            || (this.grid[0][2] == 1 && this.grid[0][2] == 1 && this.grid[2][2] == 1)) {
+            victory = this.grid[0][2];
+        }
+        // diagonal victories
+        else if ((this.grid[0][0] == 0 && this.grid[1][1] == 0 && this.grid[2][2] == 0)
+            || (this.grid[0][0] == 1 && this.grid[1][1] == 1 && this.grid[2][2] == 1)) {
+            victory = this.grid[0][0];
+        }
+        else if ((this.grid[2][0] == 0 && this.grid[1][1] == 0 && this.grid[0][2] == 0)
+            || (this.grid[2][0] == 1 && this.grid[1][1] == 1 && this.grid[0][2] == 1)) {
+            victory = this.grid[2][0];
+        }
+        return victory;
     }
 
-    //TEST
-    printBoard() {
-        for (var i = 0; i < 3; ++i)
-        {
-            for (var j = 0; j < 3; ++j)
-            {
-                console.log(this.grid[i][j]);
-            }
-            console.log();
-        }
+    updateGrid(id, col, row){
+        this.grid[col][row] = id;
     }
 }
 
@@ -124,7 +152,7 @@ function setupPieceSprites() {
 }
 
 var chessPiecesSheet
-function setupInitialPiece(stage, playerID, x = 890 , y = 100, active = true) {
+function setupInitialPiece(stage, playerID, x = 890 , y = 200, active = true) {
 
     loader
       .add("images/chess-pieces-sprites.png")
@@ -178,7 +206,7 @@ function setupInitialPiece(stage, playerID, x = 890 , y = 100, active = true) {
     }
 }
 
-function createNewPiece(stage, playerID, x = 890 , y = 100, active = true){
+function createNewPiece(stage, playerID, x = 890 , y = 200, active = true){
     let texture = chessPiecesSheet.clone();
 
     if (playerID == 0){
@@ -214,6 +242,7 @@ function createNewPiece(stage, playerID, x = 890 , y = 100, active = true){
         .on('touchmove', onDragMove);
     piece.position.x = x;
     piece.position.y = y;
+    activePiece = true;
     app.stage.addChild(piece);
 }
 
@@ -259,6 +288,9 @@ function recieveOpponentMove(data){
     // update game state
     gameState.updateGrid(data.id, data.indicies.col, data.indicies.row);
     gameState.printBoard();
+    if (gameState.checkVictory() > -1) {
+        victory(gameState.checkVictory());
+    }
 }
 
 function onDragStart(event)
@@ -282,6 +314,9 @@ function onDragEnd()
     // Update local board via local input
     gameState.updateGrid(playerID, placementObject.indicies.col, placementObject.indicies.row);
     gameState.printBoard();
+    if (gameState.checkVictory() > -1) {
+        victory(gameState.checkVictory());
+    }
 
     socket.emit('objectMoved', placementObject);
 
@@ -306,6 +341,12 @@ function onDragMove()
         this.position.x = newPosition.x;
         this.position.y = newPosition.y;
     }
+}
+
+function victory(playerID) {
+    let victoryText = new PIXI.Text("Victory for player " + playerID + "!!!",
+    {fontFamily : 'Arial', fontSize: 124, fill : 0xff1010, align : 'center'});
+    app.stage.addChild(victoryText);
 }
 
 // PIXI tutorial reccomended this
