@@ -48,13 +48,14 @@ class CustomSprite extends PIXI.Sprite {
 *
 */
 const socket = io('http://localhost:3000');
-socket.on('objectMoved', moveObject);
+socket.on('objectMoved', placeOpponentPiece);
 
+var grid;
 function createGrid(gameBoard) {
     var columns = 3;
     var rows = 3;
 
-    var grid = new Array(columns);
+    grid = new Array(columns);
     for (var i = 0; i < grid.length; i++) {
         grid[i] = new Array(rows);
     }
@@ -73,19 +74,16 @@ function createGrid(gameBoard) {
             else {
                 cell.beginFill(0xFFF8DC);
             }
-            cell.interactive = true;
-            cell.on('click', onClick);
             cell.drawRect(i*cellSize.x + 5.0, j*cellSize.y + 5.0, cellSize.x, cellSize.y);
-            grid[i][j] = cell;
+            grid[i][j] = {
+                x : i*cellSize.x + 5.0,
+                y : j*cellSize.y + 5.0,
+                width : cellSize.x,
+                height : cellSize.y
+            }
             gameBoard.addChild(cell);
         }
     }
-    return grid;
-}
-
-function onClick (eventData) {
-    console.log(eventData.data);
-    console.log("Clicked a square");
 }
 
 // TODO: Create a system that states all the active pieces,
@@ -97,38 +95,47 @@ function onClick (eventData) {
 // once a piece is placed
 
 // idk which one is better (probs first one???)
+var activePieces = new Array();
 
-function createPiece(stage, playerID) {
+var chessPiecesSheet;
+function setupPieceSprites() {
+    loader
+      .add("images/chess-pieces-sprites.png")
+      .load(setup);
+
+    function setup() {
+        chessPiecesSheet = PIXI.utils.TextureCache['images/chess-pieces-sprites.png'];
+    }
+}
+
+var chessPiecesSheet
+function setupInitialPiece(stage, playerID, x = 890 , y = 100, active = true) {
 
     loader
       .add("images/chess-pieces-sprites.png")
       .load(setup);
 
     function setup() {
-        var chessPiecesSheet = PIXI.utils.TextureCache['images/chess-pieces-sprites.png'];
-
+        chessPiecesSheet = PIXI.utils.TextureCache['images/chess-pieces-sprites.png'];
         var piece;
+        // white piece
         if (playerID == 0) {
             let rect = new PIXI.Rectangle(1000,10,200,200);
             chessPiecesSheet.frame = rect;
             piece = new CustomSprite(chessPiecesSheet);
             piece.setID(0);
-            piece.x = 32;
-            piece.y = 32;
         }
+        // black piece
         else {
             let rect = new PIXI.Rectangle(1000,200,200,200);
             chessPiecesSheet.frame = rect;
             piece = new CustomSprite(chessPiecesSheet);
             piece.setID(1);
-            piece.x = 32;
-            piece.y = 32;
         }
-
         // enable the shape to be interactive... this will allow it to respond to mouse and touch events
-        piece.interactive = true;
+        piece.interactive = active;
         // this button mode will mean the hand cursor appears when you roll over the shape with your mouse
-        piece.buttonMode = true;
+        piece.buttonMode = active;
         // center the shape's anchor point
         piece.anchor.set(0.5);
         // setup events
@@ -146,22 +153,94 @@ function createPiece(stage, playerID) {
             .on('touchmove', onDragMove);
 
         // move the sprite to its designated position
-        piece.position.x = 300;
-        piece.position.y = 300;
+        piece.position.x = x;
+        piece.position.y = y;
+
+        // set active piece flag
+        activePiece = true;
 
         app.stage.addChild(piece);
     }
 }
 
+function createNewPiece(stage, playerID, x = 890 , y = 100, active = true){
+    let texture = chessPiecesSheet.clone();
+
+    if (playerID == 0){
+        let rect = new PIXI.Rectangle(1000,10,200,200);
+        texture.frame = rect;
+        piece = new CustomSprite(texture);
+        piece.setID(0);
+    }
+    else {
+        let rect = new PIXI.Rectangle(1000,200,200,200);
+        texture.frame = rect;
+        piece = new CustomSprite(texture);
+        piece.setID(1);
+    }
+    // enable the shape to be interactive... this will allow it to respond to mouse and touch events
+    piece.interactive = active;
+    // this button mode will mean the hand cursor appears when you roll over the shape with your mouse
+    piece.buttonMode = active;
+    // center the shape's anchor point
+    piece.anchor.set(0.5);
+    // setup events
+    piece
+        // events for drag start
+        .on('mousedown', onDragStart)
+        .on('touchstart', onDragStart)
+        // events for drag end
+        .on('mouseup', onDragEnd)
+        .on('mouseupoutside', onDragEnd)
+        .on('touchend', onDragEnd)
+        .on('touchendoutside', onDragEnd)
+        // events for drag move
+        .on('mousemove', onDragMove)
+        .on('touchmove', onDragMove);
+    piece.position.x = x;
+    piece.position.y = y;
+    app.stage.addChild(piece);
+}
+
+function checkPiecePlacement(id, x, y) {
+    var columns = 3;
+    var rows = 3;
+    for (var i = 0; i < columns; i++){
+        for (var j = 0; j < rows; j++) {
+            var cell = grid[i][j];
+            if (x >= cell.x && x <= cell.width + cell.x &&
+                y >= cell.y && y <= cell.height + cell.y){
+                console.log("Piece placed within cell:");
+                console.log(cell);
+                // TODO: center the piece withing that cell
+                // then return the x, y of that centering
+
+                // additionally, return the indicies of the grid for
+                // game state updates
+                const coordinates = {
+                    x : x,
+                    y: y
+                }
+                const indicies = {
+                    col : i,
+                    row: j
+                }
+
+                return {
+                    id : id,
+                    coordinates : coordinates,
+                    indicies : indicies
+                }
+            }
+        }
+    }
+}
+
 // TODO: Right now this works given a global object that clients see.
 // Need to create an object ID system that organizes this
-function moveObject(data){
-    // console.log(data);
-    // piece.position.x = data.x;
-    // piece.position.y = data.y;
-    // var newPosition = this.data.getLocalPosition(this.parent);
-    // this.position.x = newPosition.x;
-    // this.position.y = newPosition.y;
+function placeOpponentPiece(data){
+    var coordinates = data.coordinates;
+    createNewPiece(app.stage, data.id, coordinates.x, coordinates.y, false);
 }
 
 function onDragStart(event)
@@ -176,13 +255,21 @@ function onDragStart(event)
 
 function onDragEnd()
 {
-    // We have postion of object at end of drag
-    // console.log(this.position.x);
-    // console.log(this.position.y);
-
     this.alpha = 1;
 
     this.dragging = false;
+
+    var placementObject = checkPiecePlacement(this.id, this.position.x, this.position.y);
+
+    socket.emit('objectMoved', placementObject);
+    socket.emit('updateGameState', placementObject);
+
+    // if piece was placed on a square make it non interactable
+    this.interactive = false;
+    this.buttonMode = false;
+
+    //set activePiece flag
+    activePiece = false;
 
     // set the interaction data to null
     this.data = null;
@@ -197,16 +284,6 @@ function onDragMove()
         var newPosition = this.data.getLocalPosition(this.parent);
         this.position.x = newPosition.x;
         this.position.y = newPosition.y;
-
-        console.log("Sending: " + this.position.x + "," + this.position.y);
-
-        var data = {
-            objectID: this.id,
-            x: this.position.x,
-            y: this.position.y
-        }
-
-        socket.emit('objectMoved',data)
     }
 }
 
@@ -214,7 +291,7 @@ function onDragMove()
 let state;
 state = play
 
-var activePiece = false
+var activePiece;
 
 function gameLoop() {
     state();
@@ -224,13 +301,12 @@ function gameLoop() {
 }
 
 function play(){
-    if (activePiece == false) {
-        createPiece(app.stage, 0);
-        activePiece = true
+    if (activePiece == false){
+        createNewPiece(app.stage, playerID);
     }
 }
 
-
+var playerID;
 $(document).ready(function() {
     /*
     *
@@ -238,9 +314,13 @@ $(document).ready(function() {
     *
     */
 
+    // TEST
+    playerID = parseInt(prompt("Please enter your playerID"));
+
     // Setup game screen
     gameBoard = new PIXI.Container();
-    graphicsGrid = createGrid(gameBoard);
+    createGrid(gameBoard);
+    setupInitialPiece(app.stage, playerID);
     //Add game board to stage
     app.stage.addChild(gameBoard);
 
