@@ -41,6 +41,30 @@ class CustomSprite extends PIXI.Sprite {
     }
 }
 
+class GameState {
+    constructor(columns, rows) {
+        this.grid = new Array(columns);
+        for (var i = 0; i < this.grid.length; i++) {
+            this.grid[i] = new Array(rows);
+        }
+    }
+
+    updateGrid(id, col, row){
+        this.grid[col][row] = id;
+    }
+
+    //TEST
+    printBoard() {
+        for (var i = 0; i < 3; ++i)
+        {
+            for (var j = 0; j < 3; ++j)
+            {
+                console.log(this.grid[i][j]);
+            }
+            console.log();
+        }
+    }
+}
 
 /*
 *
@@ -48,7 +72,7 @@ class CustomSprite extends PIXI.Sprite {
 *
 */
 const socket = io('http://localhost:3000');
-socket.on('objectMoved', placeOpponentPiece);
+socket.on('objectMoved', recieveOpponentMove);
 
 var grid;
 function createGrid(gameBoard) {
@@ -86,15 +110,6 @@ function createGrid(gameBoard) {
     }
 }
 
-// TODO: Create a system that states all the active pieces,
-// this may need to be connected to network
-
-// or
-
-// Have different "sets" of pieces that get activated on a clients side
-// once a piece is placed
-
-// idk which one is better (probs first one???)
 var activePieces = new Array();
 
 var chessPiecesSheet;
@@ -236,11 +251,14 @@ function checkPiecePlacement(id, x, y) {
     }
 }
 
-// TODO: Right now this works given a global object that clients see.
-// Need to create an object ID system that organizes this
-function placeOpponentPiece(data){
+function recieveOpponentMove(data){
+    // Update local board via opponents network input
     var coordinates = data.coordinates;
     createNewPiece(app.stage, data.id, coordinates.x, coordinates.y, false);
+
+    // update game state
+    gameState.updateGrid(data.id, data.indicies.col, data.indicies.row);
+    gameState.printBoard();
 }
 
 function onDragStart(event)
@@ -261,8 +279,11 @@ function onDragEnd()
 
     var placementObject = checkPiecePlacement(this.id, this.position.x, this.position.y);
 
+    // Update local board via local input
+    gameState.updateGrid(playerID, placementObject.indicies.col, placementObject.indicies.row);
+    gameState.printBoard();
+
     socket.emit('objectMoved', placementObject);
-    socket.emit('updateGameState', placementObject);
 
     // if piece was placed on a square make it non interactable
     this.interactive = false;
@@ -307,6 +328,7 @@ function play(){
 }
 
 var playerID;
+var gameState;
 $(document).ready(function() {
     /*
     *
@@ -323,6 +345,9 @@ $(document).ready(function() {
     setupInitialPiece(app.stage, playerID);
     //Add game board to stage
     app.stage.addChild(gameBoard);
+
+    //Initialize game state
+    gameState = new GameState(3,3);
 
     //Start the loop
     gameLoop();
