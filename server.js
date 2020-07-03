@@ -3,7 +3,7 @@ var express = require('express');
 var app = express();
 let port = process.env.PORT;
 if (port == null || port == "") {
-  port = 8000;
+  port = 3000;
 }
 let server = app.listen(port);
 

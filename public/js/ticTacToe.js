@@ -99,7 +99,11 @@ class GameState {
 *client code
 *
 */
-const socket = io('http://localhost:3000');
+let port = process.env.PORT;
+if (port == null || port == "") {
+  port = 3000;
+}
+const socket = io(port);
 socket.on('objectMoved', recieveOpponentMove);
 
 var grid;
