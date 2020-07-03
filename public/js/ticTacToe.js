@@ -287,7 +287,6 @@ function recieveOpponentMove(data){
 
     // update game state
     gameState.updateGrid(data.id, data.indicies.col, data.indicies.row);
-    gameState.printBoard();
     if (gameState.checkVictory() > -1) {
         victory(gameState.checkVictory());
     }
@@ -313,7 +312,6 @@ function onDragEnd()
 
     // Update local board via local input
     gameState.updateGrid(playerID, placementObject.indicies.col, placementObject.indicies.row);
-    gameState.printBoard();
     if (gameState.checkVictory() > -1) {
         victory(gameState.checkVictory());
     }
