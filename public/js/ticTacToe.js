@@ -99,11 +99,7 @@ class GameState {
 *client code
 *
 */
-let port = process.env.PORT;
-if (port == null || port == "") {
-  port = 3000;
-}
-const socket = io(port);
+const socket = io();
 socket.on('objectMoved', recieveOpponentMove);
 
 var grid;
