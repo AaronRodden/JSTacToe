@@ -7,7 +7,7 @@ if (port == null || port == "") {
 }
 app.listen(port);
 
-// app.use(express.static('public'));
+app.use(express.static('public'));
 
 console.log("My socket server is running");
 
