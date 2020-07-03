@@ -5,7 +5,7 @@ let port = process.env.PORT;
 if (port == null || port == "") {
   port = 8000;
 }
-app.listen(port);
+let server = app.listen(port);
 
 app.use(express.static('public'));
 
@@ -13,7 +13,7 @@ console.log("My socket server is running");
 
 var socket = require('socket.io');
 
-var io = socket(port);
+var io = socket(server);
 
 io.sockets.on('connection', newConnection);
 
