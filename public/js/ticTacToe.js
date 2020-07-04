@@ -103,13 +103,16 @@ const socket = io();
 socket.on('objectMoved', recieveOpponentMove);
 
 var grid;
+var graphicsGrid;
 function createGrid(gameBoard) {
     var columns = 3;
     var rows = 3;
 
     grid = new Array(columns);
+    graphicsGrid = new Array(columns);
     for (var i = 0; i < grid.length; i++) {
         grid[i] = new Array(rows);
+        graphicsGrid[i] = new Array(rows);
     }
 
     let cellSize = {
@@ -244,6 +247,7 @@ function createNewPiece(stage, playerID, x = 890 , y = 200, active = true){
     piece.position.y = y;
     activePiece = true;
     app.stage.addChild(piece);
+    return piece;
 }
 
 function checkPiecePlacement(id, x, y) {
@@ -289,17 +293,27 @@ function checkPiecePlacement(id, x, y) {
 }
 
 function recieveOpponentMove(data){
-    // Update local board via opponents network input
     var coordinates = data.coordinates;
-    createNewPiece(app.stage, data.id, coordinates.x, coordinates.y, false);
-
-    // update game state
+    var opponentPieceSprite = createNewPiece(app.stage, data.id, coordinates.x, coordinates.y, false);
     if (data.indicies.col > -1 && data.indicies.row > -1) {
+        // Update local board via opponents network input
+        updateGraphicsGrid(opponentPieceSprite, data.indicies.col, data.indicies.row);
+
         gameState.updateGrid(data.id, data.indicies.col, data.indicies.row);
         if (gameState.checkVictory() > -1) {
             victory(gameState.checkVictory());
         }
+
     }
+}
+
+function updateGraphicsGrid(newPieceSprite, col, row) {
+    //remove past sprite
+    if (graphicsGrid[col][row] != null) {
+        app.stage.removeChild(graphicsGrid[col][row]);
+    }
+    // update the graphicsGrid as to which sprite is on that cell
+    graphicsGrid[col][row] = newPieceSprite;
 }
 
 function onDragStart(event)
@@ -326,6 +340,8 @@ function onDragEnd()
     this.position.y = placementObject.coordinates.y;
     // update game state if placed on board
     if (placementObject.indicies.col > -1 && placementObject.indicies.row > -1) {
+        updateGraphicsGrid(this, placementObject.indicies.col, placementObject.indicies.row);
+
         gameState.updateGrid(playerID, placementObject.indicies.col, placementObject.indicies.row);
         if (gameState.checkVictory() > -1) {
             victory(gameState.checkVictory());
