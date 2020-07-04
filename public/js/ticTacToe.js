@@ -254,16 +254,10 @@ function checkPiecePlacement(id, x, y) {
             var cell = grid[i][j];
             if (x >= cell.x && x <= cell.width + cell.x &&
                 y >= cell.y && y <= cell.height + cell.y){
-                console.log("Piece placed within cell:");
-                console.log(cell);
-                // TODO: center the piece withing that cell
-                // then return the x, y of that centering
-
-                // additionally, return the indicies of the grid for
-                // game state updates
+                // snaps to center of tile
                 const coordinates = {
-                    x : x,
-                    y: y
+                    x : Math.round(cell.x+cell.width/2),
+                    y: Math.round(cell.y+cell.height/2)
                 }
                 const indicies = {
                     col : i,
@@ -278,6 +272,20 @@ function checkPiecePlacement(id, x, y) {
             }
         }
     }
+    //piece not placed on tile
+    const coordinates = {
+        x : x,
+        y: y
+    }
+    const indicies = {
+        col : -1,
+        row : -1
+    }
+    return {
+        id : id,
+        coordinates : coordinates,
+        indicies : indicies
+    }
 }
 
 function recieveOpponentMove(data){
@@ -286,9 +294,11 @@ function recieveOpponentMove(data){
     createNewPiece(app.stage, data.id, coordinates.x, coordinates.y, false);
 
     // update game state
-    gameState.updateGrid(data.id, data.indicies.col, data.indicies.row);
-    if (gameState.checkVictory() > -1) {
-        victory(gameState.checkVictory());
+    if (data.indicies.col > -1 && data.indicies.row > -1) {
+        gameState.updateGrid(data.id, data.indicies.col, data.indicies.row);
+        if (gameState.checkVictory() > -1) {
+            victory(gameState.checkVictory());
+        }
     }
 }
 
@@ -311,9 +321,15 @@ function onDragEnd()
     var placementObject = checkPiecePlacement(this.id, this.position.x, this.position.y);
 
     // Update local board via local input
-    gameState.updateGrid(playerID, placementObject.indicies.col, placementObject.indicies.row);
-    if (gameState.checkVictory() > -1) {
-        victory(gameState.checkVictory());
+    // snap to center
+    this.position.x = placementObject.coordinates.x;
+    this.position.y = placementObject.coordinates.y;
+    // update game state if placed on board
+    if (placementObject.indicies.col > -1 && placementObject.indicies.row > -1) {
+        gameState.updateGrid(playerID, placementObject.indicies.col, placementObject.indicies.row);
+        if (gameState.checkVictory() > -1) {
+            victory(gameState.checkVictory());
+        }
     }
 
     socket.emit('objectMoved', placementObject);
