@@ -410,6 +410,17 @@ $(document).ready(function() {
     // TEST
     playerID = parseInt(prompt("Please enter your playerID"));
 
+    //TEST
+    const style = new PIXI.TextStyle({
+        fontFamily : 'Arial',
+        fontSize: 32,
+        fill : 0xff1010,
+        textBaseline: "bottom"
+    });
+    let alphaText = new PIXI.Text("This is an alpha version of the game and is not indicitive of the final product.", style);
+    alphaText.y = 650;
+    app.stage.addChild(alphaText);
+
     // Setup game screen
     gameBoard = new PIXI.Container();
     createGrid(gameBoard);
