@@ -14,7 +14,7 @@ let Application = PIXI.Application,
     resources = PIXI.loader.resources,
     Sprite = PIXI.Sprite;
 
-//Create a Pixi Application
+//Create a Pixi Application, this variable will be used throught
 let app = new Application({
     width: 256,         // default: 800
     height: 256,        // default: 600
@@ -41,17 +41,20 @@ class CustomSprite extends PIXI.Sprite {
     }
 }
 
+/**
+ * Keeps track of game state and determines victory / other logic
+ */
 class GameState {
     constructor(columns, rows) {
         this.grid = new Array(columns);
-        for (var i = 0; i < this.grid.length; i++) {
+        for (let i = 0; i < this.grid.length; i++) {
             this.grid[i] = new Array(rows);
         }
     }
 
     // TODO: I want to change how this is done eventually but this works for now.
     checkVictory(){
-        var victory = -1
+        let victory = -1
         if ((this.grid[0][0] == 0 && this.grid[0][1] == 0 && this.grid[0][2] == 0)
             || (this.grid[0][0] == 1 && this.grid[0][1] == 1 && this.grid[0][2] == 1)) {
             victory = this.grid[0][0];
@@ -94,23 +97,36 @@ class GameState {
     }
 }
 
-/*
-*
-*client code
-*
-*/
+/**
+ * client code
+ */
 const socket = io();
 socket.on('objectMoved', recieveOpponentMove);
 
-var grid;
-var graphicsGrid;
+
+/**
+ * Shared game / network objects
+ */
+let grid; // Contains the coordinates of each cell in the grid
+let graphicsGrid; // Contains the references to sprites on the grid
+let chessPiecesSheet; // The chess piece sprite sheet
+// PIXI tutorial reccomended this
+let state;
+state = play
+let activePiece; // A flag that determines if a new piece should be spawned
+let playerID; // The id of the player
+let gameState; // game state that is updated via local and networked moves
+
+/**
+ * Grid creation
+ */
 function createGrid(gameBoard) {
-    var columns = 3;
-    var rows = 3;
+    let columns = 3;
+    let rows = 3;
 
     grid = new Array(columns);
     graphicsGrid = new Array(columns);
-    for (var i = 0; i < grid.length; i++) {
+    for (let i = 0; i < grid.length; i++) {
         grid[i] = new Array(rows);
         graphicsGrid[i] = new Array(rows);
     }
@@ -120,8 +136,8 @@ function createGrid(gameBoard) {
         y : 200
     }
 
-    for (var i = 0; i < columns; i++) {
-        for (var j = 0; j < rows; j++) {
+    for (let i = 0; i < columns; i++) {
+        for (let j = 0; j < rows; j++) {
             let cell = new PIXI.Graphics();
             if ((i+j) % 2 == 0) {
                 cell.beginFill(0x8B4513);
@@ -141,20 +157,9 @@ function createGrid(gameBoard) {
     }
 }
 
-var activePieces = new Array();
-
-var chessPiecesSheet;
-function setupPieceSprites() {
-    loader
-      .add("images/chess-pieces-sprites.png")
-      .load(setup);
-
-    function setup() {
-        chessPiecesSheet = PIXI.utils.TextureCache['images/chess-pieces-sprites.png'];
-    }
-}
-
-var chessPiecesSheet
+/**
+ * Initial sprite setup
+ */
 function setupInitialPiece(stage, playerID, x = 890 , y = 200, active = true) {
 
     loader
@@ -163,7 +168,7 @@ function setupInitialPiece(stage, playerID, x = 890 , y = 200, active = true) {
 
     function setup() {
         chessPiecesSheet = PIXI.utils.TextureCache['images/chess-pieces-sprites.png'];
-        var piece;
+        let piece;
         // white piece
         if (playerID == 0) {
             let rect = new PIXI.Rectangle(1000,10,200,200);
@@ -208,7 +213,15 @@ function setupInitialPiece(stage, playerID, x = 890 , y = 200, active = true) {
         app.stage.addChild(piece);
     }
 }
-
+/**
+ * Create a new piece on the stage. Creates sprite and game object
+ * @param {app.stage} stage Application stage you are putting sprite on
+ * @param {int} playerID For which the new piece will belong
+ * @param {int} x Placement of the piece, defaulted to piece spawn location
+ * @param {int} y Placement of the piece, defaulted to piece spawn location
+ * @param {boolean} active Flag that deterimines interactivity of piece, defaults to true
+ * @return {CustomSprite} a reference to the created sprite
+ */
 function createNewPiece(stage, playerID, x = 890 , y = 200, active = true){
     let texture = chessPiecesSheet.clone();
 
@@ -250,12 +263,19 @@ function createNewPiece(stage, playerID, x = 890 , y = 200, active = true){
     return piece;
 }
 
+/**
+ * Determines information regarding piece placement.
+ * @param {int} id The id for which the piece belongs
+ * @param {int} x The x location for which the piece was placed
+ * @param {int} y The y location for which the piece was placed
+ * @return {Object} A js object with coordinate and indicie information
+ */
 function checkPiecePlacement(id, x, y) {
-    var columns = 3;
-    var rows = 3;
-    for (var i = 0; i < columns; i++){
-        for (var j = 0; j < rows; j++) {
-            var cell = grid[i][j];
+    let columns = 3;
+    let rows = 3;
+    for (let i = 0; i < columns; i++){
+        for (let j = 0; j < rows; j++) {
+            let cell = grid[i][j];
             if (x >= cell.x && x <= cell.width + cell.x &&
                 y >= cell.y && y <= cell.height + cell.y){
                 // snaps to center of tile
@@ -292,9 +312,13 @@ function checkPiecePlacement(id, x, y) {
     }
 }
 
+/**
+ * Called upon recieving a move over the network. Updates gameboards graphics and state.
+ * @param {Object} data the data recieved over the network
+ */
 function recieveOpponentMove(data){
-    var coordinates = data.coordinates;
-    var opponentPieceSprite = createNewPiece(app.stage, data.id, coordinates.x, coordinates.y, false);
+    let coordinates = data.coordinates;
+    let opponentPieceSprite = createNewPiece(app.stage, data.id, coordinates.x, coordinates.y, false);
     if (data.indicies.col > -1 && data.indicies.row > -1) {
         // Update local board via opponents network input
         updateGraphicsGrid(opponentPieceSprite, data.indicies.col, data.indicies.row);
@@ -307,6 +331,13 @@ function recieveOpponentMove(data){
     }
 }
 
+/**
+ * Updates the grid that contains all sprite information. Updated through local
+ * and networked moves.
+ * @param {CustomSprite} newPieceSprite the sprite that will be added to grid
+ * @param {int} col The column for which the sprite will be added
+ * @param {int} row The row for which the sprite will be added
+ */
 function updateGraphicsGrid(newPieceSprite, col, row) {
     //remove past sprite
     if (graphicsGrid[col][row] != null) {
@@ -314,6 +345,16 @@ function updateGraphicsGrid(newPieceSprite, col, row) {
     }
     // update the graphicsGrid as to which sprite is on that cell
     graphicsGrid[col][row] = newPieceSprite;
+}
+
+/**
+ * Displays victory text and executes any end game logic
+ * @param {int} playerID The id of the player that won
+ */
+function victory(playerID) {
+    let victoryText = new PIXI.Text("Victory for player " + playerID + "!!!",
+    {fontFamily : 'Arial', fontSize: 124, fill : 0xff1010, align : 'center'});
+    app.stage.addChild(victoryText);
 }
 
 function onDragStart(event)
@@ -326,13 +367,16 @@ function onDragStart(event)
     this.dragging = true;
 }
 
+/**
+ * Event function that also communicates local move over the network
+ */
 function onDragEnd()
 {
     this.alpha = 1;
 
     this.dragging = false;
 
-    var placementObject = checkPiecePlacement(this.id, this.position.x, this.position.y);
+    let placementObject = checkPiecePlacement(this.id, this.position.x, this.position.y);
 
     // Update local board via local input
     // snap to center
@@ -367,23 +411,12 @@ function onDragMove()
     // change position on screen then send that info over network
     if (this.dragging)
     {
-        var newPosition = this.data.getLocalPosition(this.parent);
+        let newPosition = this.data.getLocalPosition(this.parent);
         this.position.x = newPosition.x;
         this.position.y = newPosition.y;
     }
 }
 
-function victory(playerID) {
-    let victoryText = new PIXI.Text("Victory for player " + playerID + "!!!",
-    {fontFamily : 'Arial', fontSize: 124, fill : 0xff1010, align : 'center'});
-    app.stage.addChild(victoryText);
-}
-
-// PIXI tutorial reccomended this
-let state;
-state = play
-
-var activePiece;
 
 function gameLoop() {
     state();
@@ -398,8 +431,7 @@ function play(){
     }
 }
 
-var playerID;
-var gameState;
+
 $(document).ready(function() {
     /*
     *

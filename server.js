@@ -1,6 +1,6 @@
-var express = require('express');
+let express = require('express');
 
-var app = express();
+let app = express();
 let port = process.env.PORT;
 if (port == null || port == "") {
   port = 3000;
@@ -11,9 +11,9 @@ app.use(express.static('public'));
 
 console.log("My socket server is running");
 
-var socket = require('socket.io');
+let socket = require('socket.io');
 
-var io = socket(server);
+let io = socket(server);
 
 io.sockets.on('connection', newConnection);
 
