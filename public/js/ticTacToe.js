@@ -116,6 +116,7 @@ state = play
 let activePiece; // A flag that determines if a new piece should be spawned
 let playerID; // The id of the player
 let gameState; // game state that is updated via local and networked moves
+let victoryText; // text that displays when someone wins
 
 /**
  * Grid creation
@@ -160,10 +161,11 @@ function createGrid(gameBoard) {
 /**
  * Initial sprite setup
  */
-function setupInitialPiece(stage, playerID, x = 890 , y = 200, active = true) {
+function setupInitialSprites(stage, playerID, x = 890 , y = 200, active = true) {
 
     loader
       .add("images/chess-pieces-sprites.png")
+      .add("images/reset.png")
       .load(setup);
 
     function setup() {
@@ -211,6 +213,26 @@ function setupInitialPiece(stage, playerID, x = 890 , y = 200, active = true) {
         activePiece = true;
 
         app.stage.addChild(piece);
+
+        resetTexture = PIXI.utils.TextureCache['images/reset.png'];
+        resetButton = new CustomSprite(resetTexture);
+        // enable the shape to be interactive... this will allow it to respond to mouse and touch events
+        resetButton.interactive = active;
+        // this button mode will mean the hand cursor appears when you roll over the shape with your mouse
+        resetButton.buttonMode = active;
+        // center the shape's anchor point
+        resetButton.anchor.set(0.5);
+
+        resetButton
+           // set the mousedown and touchstart callback...
+           .on('mousedown', onButtonDown)
+           .on('touchstart', onButtonDown)
+
+        resetButton.scale.set(0.3);
+        resetButton.position.x = 890;
+        resetButton.position.y = 450;
+
+        app.stage.addChild(resetButton);
     }
 }
 /**
@@ -352,9 +374,23 @@ function updateGraphicsGrid(newPieceSprite, col, row) {
  * @param {int} playerID The id of the player that won
  */
 function victory(playerID) {
-    let victoryText = new PIXI.Text("Victory for player " + playerID + "!!!",
+    victoryText = new PIXI.Text("Victory for player " + playerID + "!!!",
     {fontFamily : 'Arial', fontSize: 124, fill : 0xff1010, align : 'center'});
     app.stage.addChild(victoryText);
+}
+
+function resetGame() {
+    for (let i = 0; i < graphicsGrid.length; i++){
+        for (let j = 0; j < graphicsGrid[i].length; j++){
+            if (graphicsGrid[i][j] != null) {
+                console.log("removing...");
+                app.stage.removeChild(graphicsGrid[i][j]);
+            }
+        }
+    }
+    if (victoryText != null) {
+        app.stage.removeChild(victoryText);
+    }
 }
 
 function onDragStart(event)
@@ -417,6 +453,12 @@ function onDragMove()
     }
 }
 
+function onButtonDown()
+{
+    this.isdown = true;
+    this.alpha = 1;
+    resetGame();
+}
 
 function gameLoop() {
     state();
@@ -456,7 +498,7 @@ $(document).ready(function() {
     // Setup game screen
     gameBoard = new PIXI.Container();
     createGrid(gameBoard);
-    setupInitialPiece(app.stage, playerID);
+    setupInitialSprites(app.stage, playerID);
     //Add game board to stage
     app.stage.addChild(gameBoard);
 
