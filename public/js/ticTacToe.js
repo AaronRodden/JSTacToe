@@ -388,6 +388,9 @@ function resetGame() {
             }
         }
     }
+
+    gameState = new GameState(3,3);
+
     if (victoryText != null) {
         app.stage.removeChild(victoryText);
     }
