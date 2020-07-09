@@ -102,6 +102,7 @@ class GameState {
  */
 const socket = io();
 socket.on('objectMoved', recieveOpponentMove);
+socket.on('resetPressed', resetGame);
 
 
 /**
@@ -461,6 +462,7 @@ function onButtonDown()
     this.isdown = true;
     this.alpha = 1;
     resetGame();
+    socket.emit('resetPressed');
 }
 
 function gameLoop() {

@@ -27,4 +27,10 @@ function newConnection(socket) {
         socket.broadcast.emit('objectMoved', data); //broadcast to everyone BUT client that sent msg
         // io.sockets.emit('objectMoved', data); //broadcast to EVERYONE
     }
+
+    socket.on('resetPressed', resetPressed);
+
+    function resetPressed() {
+        socket.broadcast.emit('resetPressed');
+    }
 }
