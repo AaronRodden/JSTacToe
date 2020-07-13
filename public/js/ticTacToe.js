@@ -55,6 +55,7 @@ class GameState {
     // TODO: I want to change how this is done eventually but this works for now.
     checkVictory(){
         let victory = -1
+        // col victories
         if ((this.grid[0][0] == 0 && this.grid[0][1] == 0 && this.grid[0][2] == 0)
             || (this.grid[0][0] == 1 && this.grid[0][1] == 1 && this.grid[0][2] == 1)) {
             victory = this.grid[0][0];
@@ -67,7 +68,7 @@ class GameState {
             || (this.grid[2][0] == 1 && this.grid[2][1] == 1 && this.grid[2][2] == 1)) {
             victory = this.grid[2][0];
         }
-        // col victories
+        // row victories
         else if ((this.grid[0][0] == 0 && this.grid[1][0] == 0 && this.grid[2][0] == 0)
             || (this.grid[0][0] == 1 && this.grid[1][0] == 1 && this.grid[2][0] == 1)) {
             victory = this.grid[0][0];
@@ -76,8 +77,8 @@ class GameState {
             || (this.grid[0][1] == 1 && this.grid[1][1] == 1 && this.grid[2][1] == 1)) {
             victory = this.grid[0][1];
         }
-        else if ((this.grid[0][2] == 0 && this.grid[0][2] == 0 && this.grid[2][2] == 0)
-            || (this.grid[0][2] == 1 && this.grid[0][2] == 1 && this.grid[2][2] == 1)) {
+        else if ((this.grid[0][2] == 0 && this.grid[1][2] == 0 && this.grid[2][2] == 0)
+            || (this.grid[0][2] == 1 && this.grid[1][2] == 1 && this.grid[2][2] == 1)) {
             victory = this.grid[0][2];
         }
         // diagonal victories
