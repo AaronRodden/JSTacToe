@@ -104,7 +104,6 @@ const socket = io();
 socket.on('objectMoved', recieveOpponentMove);
 socket.on('resetPressed', resetGame);
 
-
 /**
  * Shared game / network objects
  */
@@ -478,28 +477,25 @@ function play(){
     }
 }
 
+function hostGame() {
+    let roomName = prompt("Create a room name");
+    socket.emit('hostGame', roomName);
+    playerID = 0;
+    init();
+}
 
-$(document).ready(function() {
-    /*
-    *
-    * Main game Setup
-    *
-    */
+function joinCallback() {
+    roomName = prompt("Enter a room name to connect to");
+    socket.emit('joinGame', roomName, callback = joinCallback);
+}
 
-    // TEST
-    playerID = parseInt(prompt("Please enter your playerID"));
+function joinGame() {
+    joinCallback();
+    playerID = 1;
+    init();
+}
 
-    //TEST
-    const style = new PIXI.TextStyle({
-        fontFamily : 'Arial',
-        fontSize: 32,
-        fill : 0xff1010,
-        textBaseline: "bottom"
-    });
-    let alphaText = new PIXI.Text("This is an alpha version of the game and is not indicitive of the final product.", style);
-    alphaText.y = 650;
-    app.stage.addChild(alphaText);
-
+function init() {
     // Setup game screen
     gameBoard = new PIXI.Container();
     createGrid(gameBoard);
@@ -512,4 +508,23 @@ $(document).ready(function() {
 
     //Start the loop
     gameLoop();
+}
+
+$(document).ready(function() {
+    /*
+    *
+    * Main game Setup
+    *
+    */
+
+    //TEST
+    const style = new PIXI.TextStyle({
+        fontFamily : 'Arial',
+        fontSize: 32,
+        fill : 0xff1010,
+        textBaseline: "bottom"
+    });
+    let alphaText = new PIXI.Text("This is an alpha version of the game and is not indicitive of the final product.", style);
+    alphaText.y = 650;
+    app.stage.addChild(alphaText);
 });
